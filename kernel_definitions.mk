@@ -81,16 +81,21 @@ KERNEL_GCC_NOANDROID_CHK := $(shell (echo "int main() {return 0;}" | $(KERNEL_CR
 cc :=
 real_cc :=
 ifeq ($(KERNEL_LLVM_SUPPORT),true)
-  ifeq ($(KERNEL_SD_LLVM_SUPPORT), true)  #Using sd-llvm compiler
-    ifeq ($(shell echo $(SDCLANG_PATH) | head -c 1),/)
-       KERNEL_LLVM_BIN := $(SDCLANG_PATH)/clang
+  ifeq ($(KERNEL_CUSTOM_LLVM),)
+    ifeq ($(KERNEL_SD_LLVM_SUPPORT), true)  #Using sd-llvm compiler
+      ifeq ($(shell echo $(SDCLANG_PATH) | head -c 1),/)
+         KERNEL_LLVM_BIN := $(SDCLANG_PATH)/clang
+      else
+         KERNEL_LLVM_BIN := $(shell pwd)/$(SDCLANG_PATH)/clang
+      endif
+      $(info "Using sdllvm" $(KERNEL_LLVM_BIN))
     else
-       KERNEL_LLVM_BIN := $(shell pwd)/$(SDCLANG_PATH)/clang
+      KERNEL_LLVM_BIN := $(shell pwd)/$(CLANG) #Using aosp-llvm compiler
+      $(info "Using aosp-llvm" $(KERNEL_LLVM_BIN))
     endif
-    $(info "Using sdllvm" $(KERNEL_LLVM_BIN))
   else
-    KERNEL_LLVM_BIN := $(shell pwd)/$(CLANG) #Using aosp-llvm compiler
-    $(info "Using aosp-llvm" $(KERNEL_LLVM_BIN))
+    KERNEL_LLVM_BIN := $(shell pwd)/prebuilts/clang/host/linux-x86/clang-$(KERNEL_CUSTOM_LLVM)/bin/clang
+    $(info "Using custom llvm: $(KERNEL_CUSTOM_LLVM)" $(KERNEL_LLVM_BIN))
   endif
   ifeq ($(KERNEL_ARCH), arm64)
       real_cc := REAL_CC=$(KERNEL_LLVM_BIN) CLANG_TRIPLE=aarch64-linux-gnu-
